@@ -3,7 +3,7 @@ from typing import List
 
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = "postgresql://postgres:password@localhost:5432/marketlens"
+    DATABASE_URL: str = "sqlite:///./marketlens.db"
     MARKET_API_KEY: str = ""
     MARKET_API_PROVIDER: str = "alpha_vantage"
     SECRET_KEY: str = "dev-secret-key"
