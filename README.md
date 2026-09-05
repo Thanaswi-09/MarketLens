@@ -54,7 +54,7 @@ React + TypeScript (Vite)
 FastAPI REST API
     SQLAlchemy ORM
         ↓
-PostgreSQL
+SQLite
         ↓
 Yahoo Finance (primary, no key) → Alpha Vantage (fallback)
 ```
@@ -63,7 +63,7 @@ Yahoo Finance (primary, no key) → Alpha Vantage (fallback)
 graph TD
     A[React Frontend] -->|REST| B[FastAPI]
     B --> C[SQLAlchemy]
-    C --> D[(PostgreSQL)]
+    C --> D[(SQLite)]
     B --> E[market_data_service]
     E -->|primary| F[Yahoo Finance]
     E -->|fallback| G[Alpha Vantage]
@@ -80,7 +80,7 @@ graph TD
 |---|---|
 | Frontend | React 19, TypeScript, Tailwind CSS v4, Recharts |
 | Backend | Python, FastAPI, SQLAlchemy |
-| Database | PostgreSQL |
+| Database | SQLite |
 | Market Data | Yahoo Finance (unofficial), Alpha Vantage |
 | Testing | Pytest |
 
@@ -202,13 +202,7 @@ If ≥3 historical snapshots exist, the engine computes the stock's average rece
 - Node.js 18+
 - PostgreSQL running locally
 
-### 1. Create the database
-
-```sql
-CREATE DATABASE marketlens;
-```
-
-### 2. Backend
+### 1. Backend
 
 ```bash
 cd backend
@@ -223,7 +217,7 @@ pip install -r requirements.txt
 Edit `backend/.env`:
 
 ```env
-DATABASE_URL=postgresql://postgres:password@localhost:5432/marketlens
+DATABASE_URL=sqlite:///./marketlens.db
 MARKET_API_KEY=your_alpha_vantage_key   # optional, Yahoo Finance works without a key
 SECRET_KEY=change-this-in-production
 DATA_FRESH_MINUTES=5
@@ -231,7 +225,7 @@ DATA_DELAYED_MINUTES=15
 CORS_ORIGINS=http://localhost:5173,http://localhost:3000
 ```
 
-### 4. Frontend
+### 2. Frontend
 
 ```bash
 cd frontend
