@@ -1,124 +1,208 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TrendingUp, TrendingDown } from 'lucide-react';
+import { TrendingUp, TrendingDown, ArrowRight, GitCompare } from 'lucide-react';
 import { AttentionBadge } from '../components/AttentionBadge';
 import { LoadingState, EmptyState } from '../components/LoadingState';
 import { useWatchlist } from '../hooks/useWatchlist';
 import type { ChangeDetail } from '../types';
+
+type Filter = 'all' | 'attention' | 'changed' | 'stable';
 
 function fmtPct(n: number | null) {
   if (n == null) return null;
   return `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
 }
 
-function ChangeRow({ detail }: { detail: ChangeDetail }) {
+function RankRow({ detail, rank }: { detail: ChangeDetail; rank: number }) {
   const navigate = useNavigate();
-  const { symbol, company_name, price_change_pct, volume_change_pct, attention_score, baseline_multiplier } = detail;
+  const { symbol, company_name, current_price, price_change_pct, volume_change_pct, attention_score, baseline_multiplier } = detail;
   const priceUp = (price_change_pct ?? 0) >= 0;
+  const isAttention = attention_score.classification === 'NEEDS_ATTENTION';
+  const isChanged = attention_score.classification === 'CHANGED';
+
+  const scoreColor = isAttention ? '#EF4444' : isChanged ? '#F59E0B' : '#22C55E';
 
   return (
     <div onClick={() => navigate(`/stocks/${symbol}`)}
-      className="flex items-center justify-between p-4 bg-slate-800/60 border border-slate-700 rounded-xl cursor-pointer hover:border-slate-500 hover:bg-slate-800 transition-all">
-      <div className="flex items-center gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-white font-bold">{symbol}</span>
-            <AttentionBadge score={attention_score} />
-          </div>
-          {company_name && <p className="text-slate-400 text-xs">{company_name}</p>}
+      className="flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all duration-150 group"
+      style={{ backgroundColor: '#151B23', borderColor: 'rgba(255,255,255,0.06)' }}
+      onMouseEnter={e => { (e.currentTarget.style.backgroundColor = '#1A222D'); (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'); }}
+      onMouseLeave={e => { (e.currentTarget.style.backgroundColor = '#151B23'); (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'); }}>
+
+      {/* Rank */}
+      <span className="text-sm font-bold w-6 text-center tabular-nums" style={{ color: '#667085' }}>
+        {String(rank).padStart(2, '0')}
+      </span>
+
+      {/* Symbol + name */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-0.5">
+          <span className="font-bold text-sm" style={{ color: '#F5F7FA' }}>{symbol}</span>
+          <AttentionBadge score={attention_score} />
         </div>
+        {company_name && <p className="text-xs truncate" style={{ color: '#667085' }}>{company_name}</p>}
       </div>
-      <div className="flex items-center gap-6 text-sm">
-        {price_change_pct != null && (
-          <div className="text-right">
-            <p className={`font-semibold flex items-center gap-1 ${priceUp ? 'text-emerald-400' : 'text-red-400'}`}>
-              {priceUp ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-              {fmtPct(price_change_pct)}
-            </p>
-            {baseline_multiplier && baseline_multiplier > 1.5 && (
-              <p className="text-yellow-400 text-xs">{baseline_multiplier.toFixed(1)}× normal</p>
-            )}
-          </div>
-        )}
-        {volume_change_pct != null && (
-          <div className="text-right hidden sm:block">
-            <p className="text-slate-400 text-xs">Volume</p>
-            <p className={`font-medium ${(volume_change_pct ?? 0) >= 0 ? 'text-blue-400' : 'text-orange-400'}`}>
-              {fmtPct(volume_change_pct)}
-            </p>
-          </div>
-        )}
-        <div className="text-right hidden md:block">
-          <p className="text-slate-400 text-xs">Score</p>
-          <p className="text-white font-semibold">{attention_score.score}/100</p>
+
+      {/* Price */}
+      <div className="text-right hidden sm:block">
+        <p className="text-sm font-semibold tabular-nums" style={{ color: '#F5F7FA' }}>
+          {current_price != null ? `$${current_price.toFixed(2)}` : '—'}
+        </p>
+      </div>
+
+      {/* Price change */}
+      {price_change_pct != null && (
+        <div className="text-right w-20">
+          <p className="text-sm font-bold tabular-nums flex items-center justify-end gap-0.5"
+            style={{ color: priceUp ? '#22C55E' : '#EF4444' }}>
+            {priceUp ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+            {fmtPct(price_change_pct)}
+          </p>
+          {baseline_multiplier && baseline_multiplier > 1.5 && (
+            <p className="text-xs tabular-nums" style={{ color: '#F59E0B' }}>{baseline_multiplier.toFixed(1)}× normal</p>
+          )}
         </div>
+      )}
+
+      {/* Volume */}
+      {volume_change_pct != null && (
+        <div className="text-right w-20 hidden md:block">
+          <p className="text-xs" style={{ color: '#9AA4B2' }}>Volume</p>
+          <p className="text-sm font-medium tabular-nums"
+            style={{ color: (volume_change_pct ?? 0) >= 0 ? '#38BDF8' : '#F97316' }}>
+            {fmtPct(volume_change_pct)}
+          </p>
+        </div>
+      )}
+
+      {/* Score */}
+      <div className="text-right w-16 hidden sm:block">
+        <p className="text-xs" style={{ color: '#667085' }}>Score</p>
+        <p className="text-sm font-bold tabular-nums" style={{ color: scoreColor }}>
+          {Math.round(attention_score.score)}
+        </p>
       </div>
+
+      <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: '#38BDF8' }} />
     </div>
   );
 }
 
 export function WhatChanged() {
   const { watchlists, activeId, setActiveId, summary, summaryLoading } = useWatchlist();
+  const [filter, setFilter] = useState<Filter>('all');
 
-  const meaningful = summary ? [...summary.needs_attention, ...summary.changed] : [];
+  const allMeaningful = summary ? [...summary.needs_attention, ...summary.changed] : [];
   const stable = summary?.stable ?? [];
 
+  const filtered = filter === 'attention' ? (summary?.needs_attention ?? [])
+    : filter === 'changed' ? (summary?.changed ?? [])
+    : filter === 'stable' ? stable
+    : allMeaningful;
+
+  const filters: { key: Filter; label: string; count: number }[] = [
+    { key: 'all',       label: 'All Changes',     count: allMeaningful.length },
+    { key: 'attention', label: 'Needs Attention',  count: summary?.needs_attention.length ?? 0 },
+    { key: 'changed',   label: 'Changed',          count: summary?.changed.length ?? 0 },
+    { key: 'stable',    label: 'Stable',           count: stable.length },
+  ];
+
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+
+      {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white">What Changed?</h1>
-        <p className="text-slate-400 text-sm mt-0.5">
+        <div className="flex items-center gap-2 mb-1">
+          <GitCompare className="w-5 h-5" style={{ color: '#38BDF8' }} />
+          <h1 className="text-2xl font-bold tracking-tight" style={{ color: '#F5F7FA' }}>What Changed?</h1>
+        </div>
+        <p className="text-sm" style={{ color: '#667085' }}>
           {summary?.last_checked
-            ? `Since your last check at ${new Date(summary.last_checked).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-            : 'Meaningful changes since your last check'}
+            ? `Meaningful market movements since your last check at ${new Date(summary.last_checked).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+            : 'Meaningful market movements since your last check.'}
         </p>
       </div>
 
       {/* Watchlist selector */}
-      <div className="flex flex-wrap gap-2">
-        {watchlists.map(wl => (
-          <button key={wl.id} onClick={() => setActiveId(wl.id)}
-            className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${activeId === wl.id ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>
-            {wl.name}
-          </button>
-        ))}
-      </div>
+      {watchlists.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {watchlists.map(wl => (
+            <button key={wl.id} onClick={() => setActiveId(wl.id)}
+              className="px-3.5 py-1.5 rounded-lg text-sm font-medium border transition-all duration-150"
+              style={{
+                backgroundColor: activeId === wl.id ? '#1A222D' : 'transparent',
+                borderColor: activeId === wl.id ? '#38BDF8' : 'rgba(255,255,255,0.08)',
+                color: activeId === wl.id ? '#F5F7FA' : '#9AA4B2',
+              }}>
+              {wl.name}
+            </button>
+          ))}
+        </div>
+      )}
 
       {summaryLoading ? (
         <LoadingState message="Analyzing changes..." />
       ) : !summary ? (
         <EmptyState title="No watchlist selected" description="Select a watchlist to see what changed." />
-      ) : meaningful.length === 0 && stable.length === 0 ? (
+      ) : allMeaningful.length === 0 && stable.length === 0 ? (
         <EmptyState title="No stocks in watchlist" description="Add stocks from the Dashboard." />
       ) : (
         <div className="space-y-6">
-          {meaningful.length > 0 ? (
-            <section>
-              <p className="text-slate-300 font-semibold mb-3">
-                {meaningful.length} meaningful {meaningful.length === 1 ? 'change' : 'changes'}
-              </p>
-              <div className="space-y-3">
-                {meaningful.map(d => <ChangeRow key={d.symbol} detail={d} />)}
-              </div>
-            </section>
-          ) : (
-            <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-sm">
-              ✓ No meaningful changes detected.
-            </div>
+          {/* Filter tabs */}
+          <div className="flex flex-wrap gap-2">
+            {filters.map(f => (
+              <button key={f.key} onClick={() => setFilter(f.key)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-150"
+                style={{
+                  backgroundColor: filter === f.key ? '#1A222D' : 'transparent',
+                  borderColor: filter === f.key ? 'rgba(56,189,248,0.4)' : 'rgba(255,255,255,0.06)',
+                  color: filter === f.key ? '#F5F7FA' : '#9AA4B2',
+                }}>
+                {f.label}
+                <span className="px-1.5 py-0.5 rounded-full text-xs"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: '#667085' }}>
+                  {f.count}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* Meaningful changes */}
+          {(filter === 'all' || filter === 'attention' || filter === 'changed') && (
+            <>
+              {filtered.length > 0 ? (
+                <div className="space-y-2">
+                  {filtered.map((d, i) => <RankRow key={d.symbol} detail={d} rank={i + 1} />)}
+                </div>
+              ) : (
+                <div className="p-4 rounded-xl border text-sm flex items-center gap-2"
+                  style={{ backgroundColor: 'rgba(34,197,94,0.06)', borderColor: 'rgba(34,197,94,0.15)', color: '#22C55E' }}>
+                  <span>✓</span>
+                  <span>No meaningful changes detected in this category.</span>
+                </div>
+              )}
+            </>
           )}
 
-          {stable.length > 0 && (
-            <section>
-              <p className="text-slate-500 text-sm font-medium mb-2">
-                Everything else is stable ({stable.length} {stable.length === 1 ? 'stock' : 'stocks'})
+          {/* Stable stocks */}
+          {(filter === 'all' || filter === 'stable') && stable.length > 0 && (
+            <div>
+              <p className="text-xs font-medium mb-3" style={{ color: '#667085' }}>
+                Everything else is stable — {stable.length} {stable.length === 1 ? 'stock' : 'stocks'}
               </p>
               <div className="flex flex-wrap gap-2">
                 {stable.map(d => (
-                  <span key={d.symbol} className="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded-lg text-slate-400 text-sm">
+                  <button key={d.symbol}
+                    onClick={() => window.location.assign(`/stocks/${d.symbol}`)}
+                    className="px-3 py-1.5 rounded-lg text-sm border transition-all duration-150"
+                    style={{ backgroundColor: '#151B23', borderColor: 'rgba(255,255,255,0.06)', color: '#9AA4B2' }}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)')}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)')}>
                     {d.symbol}
-                  </span>
+                  </button>
                 ))}
               </div>
-            </section>
+            </div>
           )}
         </div>
       )}

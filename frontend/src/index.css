@@ -1,1 +1,70 @@
 @import "tailwindcss";
+
+@theme {
+  --color-bg-primary: #0B0F14;
+  --color-bg-secondary: #11161D;
+  --color-bg-card: #151B23;
+  --color-bg-elevated: #1A222D;
+  --color-border: rgba(255,255,255,0.06);
+  --color-text-primary: #F5F7FA;
+  --color-text-secondary: #9AA4B2;
+  --color-text-muted: #667085;
+  --color-positive: #22C55E;
+  --color-warning: #F59E0B;
+  --color-attention: #EF4444;
+  --color-accent: #38BDF8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #0B0F14;
+  color: #F5F7FA;
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tabular numbers for financial data */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #1A222D; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #2D3748; }
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #151B23 25%, #1A222D 50%, #151B23 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+/* Smooth page transitions */
+.page-enter {
+  animation: fadeSlideIn 0.2s ease-out;
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Score ring animation */
+@keyframes scoreRing {
+  from { stroke-dashoffset: 283; }
+}
+
+.score-ring {
+  animation: scoreRing 0.8s ease-out forwards;
+}
